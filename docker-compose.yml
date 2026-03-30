@@ -19,3 +19,9 @@ services:
     ports:
       - "5432:5432"
     restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+# 볼륨 정의 (서비스와 같은 레벨)
+volumes:
+  postgres_data:
