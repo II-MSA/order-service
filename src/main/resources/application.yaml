@@ -1,0 +1,22 @@
+server:
+  port: 5110
+spring:
+  application:
+    name: order-service
+    # 임시 postgresql 설정
+  datasource:
+    url: jdbc:postgresql://localhost:5432/apang_db
+    username: apang
+    password: apangpass
+    driver-class-name: org.postgresql.Driver
+  # 임시 jpa 설정 ( 이후 config-server로 부터 받을 예정 )
+    jpa:
+      hibernate:
+        ddl-auto: update
+      show-sql: true
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:3101/eureka/
+  instance:
+    prefer-ip-address: true # 호스트네임보다 IP 주소를 우선 사용하여 통신
