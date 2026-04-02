@@ -1,4 +1,4 @@
-package org.iimsa.orderservice.domain.entity;
+package org.iimsa.orderservice.domain.model;
 
 public enum OrderStatus {
     // 결제 관련

@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -21,12 +22,12 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<CreateOrderResponseDto> createOrder(CreateOrderRequestDto request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public CreateOrderResponseDto createOrder(CreateOrderRequestDto request) {
         CreateOrderCommand command = CreateOrderCommand.from(request);
 
         UUID orderId = orderService.createOrder(command);
 
-        CreateOrderResponseDto response = new CreateOrderResponseDto(orderId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return new CreateOrderResponseDto(orderId);
     }
 }

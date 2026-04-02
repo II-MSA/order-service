@@ -1,17 +1,25 @@
 package org.iimsa.orderservice.application.dto.command;
 
-import org.iimsa.orderservice.domain.entity.Order;
+import java.util.UUID;
+import org.iimsa.orderservice.domain.model.PaymentMethod;
 import org.iimsa.orderservice.presentation.dto.CreateOrderRequestDto;
 
-public class CreateOrderCommand {
-
+public record CreateOrderCommand(
+        UUID supplierId,
+        UUID receiverId,
+        UUID productId,
+        Integer quantity,
+        String requestDetails,
+        PaymentMethod paymentMethod
+) {
     public static CreateOrderCommand from(CreateOrderRequestDto request) {
-        return new  CreateOrderCommand();
-    }
-
-    // Command에서 Entity로 변환하는 책임
-    public Order toEntity() {
-        return Order.builder()
-                .build();
+        return new CreateOrderCommand(
+                request.supplierId(),
+                request.receiverId(),
+                request.productId(),
+                request.quantity(),
+                request.requestDetails(),
+                PaymentMethod.valueOf(request.paymentMethod().toUpperCase())
+        );
     }
 }

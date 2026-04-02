@@ -1,6 +1,6 @@
 package org.iimsa.orderservice.domain.repository;
 
-import org.iimsa.orderservice.domain.entity.Order;
+import org.iimsa.orderservice.domain.model.Order;
 import org.springframework.stereotype.Repository;
 
 @Repository
