@@ -3,7 +3,6 @@ package org.iimsa.orderservice.infrastructure.provider;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.iimsa.orderservice.domain.service.ProductProvider;
-import org.iimsa.orderservice.infrastructure.client.CompanyClient;
 import org.iimsa.orderservice.infrastructure.client.ProductClient;
 import org.springframework.stereotype.Component;
 

@@ -7,7 +7,6 @@ import org.iimsa.orderservice.application.dto.command.CreateOrderCommand;
 import org.iimsa.orderservice.presentation.dto.CreateOrderRequestDto;
 import org.iimsa.orderservice.presentation.dto.CreateOrderResponseDto;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -30,4 +29,6 @@ public class OrderController {
 
         return new CreateOrderResponseDto(orderId);
     }
+
+
 }

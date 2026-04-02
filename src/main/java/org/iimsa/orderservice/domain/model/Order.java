@@ -1,10 +1,19 @@
 package org.iimsa.orderservice.domain.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.util.UUID;
-import org.iimsa.orderservice.domain.service.CompanyProvider;
-import org.iimsa.orderservice.domain.service.ProductProvider;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 // protected는 같은 패키지만 적용돼서 엔티티랑 VO를 같은 패키지 아래에 둔다.
 @Entity
@@ -56,15 +65,9 @@ public class Order {
             Product product,
             Supplier supplier,
             Receiver receiver,
-            String requestDetails,
-            PaymentMethod paymentMethod
+            String requestDetails
     ) {
-        // 결제 종류에 따라서 주문 생성시 주문 상태를 정의한다.
-        // 무통장 입금의 경우 PENDING_PAYMENT로 생성
-        // 카드결제의 경우 바로 PAID로 생성
-        OrderStatus status = (paymentMethod == PaymentMethod.CARD)
-                ? OrderStatus.PAID
-                : OrderStatus.PENDING_PAYMENT;
+        OrderStatus status = OrderStatus.ORDER_CREATED;
 
         return Order.builder()
                 .product(product)
@@ -79,46 +82,24 @@ public class Order {
     // 상태 변경 로직
     // ===========================
 
-    // 무통장 결제중, 계좌로 입금을 완료하면 상태를 PENDING_PAYMENT -> PAID 로 변경한다.
-    public void markAsPaid() {
-        validateCurrentStatus(OrderStatus.PENDING_PAYMENT);
-        this.orderStatus = OrderStatus.PAID;
-    }
-
-    // PAID -> 배송 준비중 ( 허브에서 승인 시 )
-    public void prepareShipment() {
-        validateCurrentStatus(OrderStatus.PAID);
-        this.orderStatus = OrderStatus.PREPARING_SHIPMENT;
-    }
-
-    // 배송 준비중(PREPARING_SHIPMENT) -> 자정이 넘으면 IN_TRANSIT
+    // 주문 생성 -> 배송중
     public void startDelivery(UUID deliveryId) {
-        validateCurrentStatus(OrderStatus.PREPARING_SHIPMENT);
+        validateCurrentStatus(OrderStatus.ORDER_CREATED);
         this.deliveryId = deliveryId;
         this.orderStatus = OrderStatus.IN_TRANSIT;
     }
 
-    // IN_TRANSIT -> 수령 업체로 배송이 완료되면 DELIVERED
+    // 배송중 -> 수령 업체로 배송이 완료되면 DELIVERED
     public void completeDelivery() {
         validateCurrentStatus(OrderStatus.IN_TRANSIT);
         this.orderStatus = OrderStatus.DELIVERED;
     }
 
-    // 취소 요청
-    public void requestCancel() {
-        if (this.orderStatus == OrderStatus.DELIVERED) {
-            throw new IllegalStateException("이미 배송 완료된 주문은 취소할 수 없습니다.");
-        }
-        this.orderStatus = OrderStatus.CANCEL_REQUESTED;
-    }
-
-    // 취소 완료
+    // 주문 생성 -> 주문 취소 ( 12시 전에만 가능 )
     public void cancel() {
-        validateCurrentStatus(OrderStatus.CANCEL_REQUESTED);
-        this.orderStatus = OrderStatus.CANCELLED;
+        validateCurrentStatus(OrderStatus.ORDER_CREATED);
+        this.orderStatus = OrderStatus.ORDER_CANCELLED;
     }
-
-    // 환불 로직
 
     // ===========================
     // 내부 검증

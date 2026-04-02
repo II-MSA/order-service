@@ -1,7 +1,6 @@
 package org.iimsa.orderservice.application.dto.command;
 
 import java.util.UUID;
-import org.iimsa.orderservice.domain.model.PaymentMethod;
 import org.iimsa.orderservice.presentation.dto.CreateOrderRequestDto;
 
 public record CreateOrderCommand(
@@ -9,8 +8,7 @@ public record CreateOrderCommand(
         UUID receiverId,
         UUID productId,
         Integer quantity,
-        String requestDetails,
-        PaymentMethod paymentMethod
+        String requestDetails
 ) {
     public static CreateOrderCommand from(CreateOrderRequestDto request) {
         return new CreateOrderCommand(
@@ -18,8 +16,7 @@ public record CreateOrderCommand(
                 request.receiverId(),
                 request.productId(),
                 request.quantity(),
-                request.requestDetails(),
-                PaymentMethod.valueOf(request.paymentMethod().toUpperCase())
+                request.requestDetails()
         );
     }
 }
