@@ -21,10 +21,10 @@ public class Supplier {
     @Column(name = "supplierName", length = 100)
     private String supplierName;
 
-    // 주소추가
-    @Column(name = "supplier_address", length = 200)
-    private String supplierAddress;
-
+    private Supplier(UUID supplierId, String supplierName, String supplierAddress) {
+        this.supplierId = supplierId;
+        this.supplierName = supplierName;
+    }
 
     protected Supplier(UUID supplierId, CompanyProvider provider) {
         if (supplierId == null) {
@@ -37,7 +37,6 @@ public class Supplier {
         this.supplierId = supplierId;
         CompanyData companyData = provider.getCompany(supplierId);
         this.supplierName = companyData.name();
-        this.supplierAddress = companyData.address();
     }
 
     public static Supplier from(UUID companyId, CompanyProvider companyProvider) {

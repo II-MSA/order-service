@@ -1,7 +1,7 @@
 package org.iimsa.orderservice.application.dto.command;
 
 import java.util.UUID;
-import org.iimsa.orderservice.presentation.dto.CreateOrderRequestDto;
+import org.iimsa.orderservice.presentation.dto.request.CreateOrderRequestDto;
 
 public record CreateOrderCommand(
         UUID supplierId,

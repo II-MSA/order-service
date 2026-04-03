@@ -1,4 +1,4 @@
-package org.iimsa.orderservice.presentation.dto;
+package org.iimsa.orderservice.presentation.dto.response;
 
 import java.util.UUID;
 

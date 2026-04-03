@@ -9,17 +9,20 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 // protected는 같은 패키지만 적용돼서 엔티티랑 VO를 같은 패키지 아래에 둔다.
 @Entity
 @Table(name = "p_order")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("deleted_at is NULL")
 public class Order {
 
     @Id
@@ -37,7 +40,6 @@ public class Order {
     private Receiver receiver;
 
     @Column(name = "delivery_id")
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID deliveryId;
 
     @Enumerated(EnumType.STRING)
@@ -59,6 +61,8 @@ public class Order {
         this.receiver = receiver;
         this.orderStatus = orderStatus;
         this.requestDetails = requestDetails;
+        // 주문 생성 시점에 배송 ID를 결정
+        this.deliveryId = UUID.randomUUID();
     }
 
     public static Order create(
@@ -67,6 +71,7 @@ public class Order {
             Receiver receiver,
             String requestDetails
     ) {
+        // 주문이 생성될 때, 주문 상태는 ORDER_CREATED로 생성되야 한다.
         OrderStatus status = OrderStatus.ORDER_CREATED;
 
         return Order.builder()
@@ -79,13 +84,38 @@ public class Order {
     }
 
     // ===========================
-    // 상태 변경 로직
+    // 주문 정보 수정시
     // ===========================
 
-    // 주문 생성 -> 배송중
-    public void startDelivery(UUID deliveryId) {
+    // 발주를 넣을 상품에 대한 정보 수정시 ( 상품 ID, 상품명, 주문할 수량 )
+    public void updateProduct(Product product) {
         validateCurrentStatus(OrderStatus.ORDER_CREATED);
-        this.deliveryId = deliveryId;
+        this.product = product;
+    }
+
+    // 수령 주소, 수령자 정보 수정시
+    public void updateDeliveryInfo(Receiver receiver, String requestDetails) {
+        validateCurrentStatus(OrderStatus.ORDER_CREATED); // 생성 상태일 때만 수정 가능
+        this.receiver = receiver;
+        this.requestDetails = requestDetails;
+    }
+
+    // 주문 접수 후, 공급 업체의 정보가 바뀔 때
+    public void updateSupplier(Supplier supplier) {
+        validateCurrentStatus(OrderStatus.ORDER_CREATED);
+        this.supplier = supplier;
+    }
+
+    // ===========================
+    // 주문 상태 변경 로직
+    // ===========================
+
+    // 주문 생성 -> 배송중 ( "자정 스케쥴러"에 의해 배송이 시작된 상태 )
+    public void startDelivery() {
+        validateCurrentStatus(OrderStatus.ORDER_CREATED);
+        if (deliveryId == null) {
+            throw new IllegalArgumentException("배송 ID가 할당되지 않은 주문은 배송을 시작할 수 없습니다.");
+        }
         this.orderStatus = OrderStatus.IN_TRANSIT;
     }
 
@@ -96,8 +126,12 @@ public class Order {
     }
 
     // 주문 생성 -> 주문 취소 ( 12시 전에만 가능 )
-    public void cancel() {
+    // 예시: 호출하는 쪽(Service)에서 LocalDateTime.now()를 넘겨줌
+    public void cancel(LocalDateTime now) {
         validateCurrentStatus(OrderStatus.ORDER_CREATED);
+        if (now.getHour() >= 12) {
+            throw new IllegalStateException("12시 이후에는 주문을 취소할 수 없습니다.");
+        }
         this.orderStatus = OrderStatus.ORDER_CANCELLED;
     }
 

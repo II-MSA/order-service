@@ -21,18 +21,18 @@ public class Receiver {
     @Column(name = "receiverName", length = 100)
     private String receiverName;
 
-    // 주소추가
-    @Column(name = "receiver_address", length = 200)
-    private String receiverAddress;
-
     protected Receiver(UUID receiverId, CompanyProvider provider) {
         this.receiverId = receiverId;
         CompanyData companyData = provider.getCompany(receiverId);
-        this.receiverName= companyData.name();
-        this.receiverAddress = companyData.address();
+        this.receiverName = companyData.name();
+    }
+
+    private Receiver(UUID receiverId, String name, String address) {
+        this.receiverId = receiverId;
+        this.receiverName = name;
     }
 
     public static Receiver from(UUID receiverId, CompanyProvider companyProvider) {
-        return new Receiver(receiverId,companyProvider);
+        return new Receiver(receiverId, companyProvider);
     }
 }
