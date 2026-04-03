@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
+import org.iimsa.common.domain.BaseEntity;
 
 // protected는 같은 패키지만 적용돼서 엔티티랑 VO를 같은 패키지 아래에 둔다.
 @Entity
@@ -23,7 +24,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("deleted_at is NULL")
-public class Order {
+public class Order extends BaseEntity {
 
     @Id
     @Column(name = "id")
@@ -133,6 +134,13 @@ public class Order {
             throw new IllegalStateException("12시 이후에는 주문을 취소할 수 없습니다.");
         }
         this.orderStatus = OrderStatus.ORDER_CANCELLED;
+    }
+
+    // 주문 삭제: 시스템에서 숨김 (Soft Delete)
+    // 이 메서드가 호출되어 deletedAt에 값이 찍히는 순간, @SQLRestriction에 의해 조회되지 않음
+    public void delete(String deletedBy) {
+        this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedBy;
     }
 
     // ===========================

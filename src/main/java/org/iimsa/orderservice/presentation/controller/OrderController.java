@@ -12,6 +12,7 @@ import org.iimsa.orderservice.presentation.dto.response.CreateOrderResponseDto;
 import org.iimsa.orderservice.presentation.dto.response.FindOrderResponseDto;
 import org.iimsa.orderservice.presentation.dto.response.UpdateResponseDto;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -82,5 +83,24 @@ public class OrderController {
         }
 
         return UpdateResponseDto.success(orderId, message.toString().trim());
+    }
+
+    /**
+     * 1. 주문 취소 (상태 변경) 사용자가 "취소 버튼"을 눌렀을 때 호출
+     */
+    @PatchMapping("/{id}/cancel")
+    public UpdateResponseDto cancelOrder(@PathVariable("id") UUID orderId) {
+        orderService.cancelOrder(orderId);
+        return UpdateResponseDto.success(orderId, "주문이 정상적으로 취소되었습니다.");
+    }
+
+    /**
+     * 2. 주문 삭제 (Soft Delete) 목록에서 완전히 지우고 싶거나, 관리자가 데이터를 무효화할 때 호출
+     */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteOrder(@PathVariable("id") UUID orderId, String userId) { // 임시로 유저 ID를 입력받음, 이후 실제 유저정보를 받아오도록 변경
+        orderService.deleteOrder(orderId, userId);
+        // 서비스에 order.delete()를 호출하는 로직 추가 필요
     }
 }
