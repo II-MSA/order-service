@@ -101,6 +101,5 @@ public class OrderController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteOrder(@PathVariable("id") UUID orderId, String userId) { // 임시로 유저 ID를 입력받음, 이후 실제 유저정보를 받아오도록 변경
         orderService.deleteOrder(orderId, userId);
-        // 서비스에 order.delete()를 호출하는 로직 추가 필요
     }
 }

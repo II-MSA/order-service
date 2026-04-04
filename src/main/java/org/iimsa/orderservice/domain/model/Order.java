@@ -111,19 +111,13 @@ public class Order extends BaseEntity {
     // 주문 상태 변경 로직
     // ===========================
 
-    // 주문 생성 -> 배송중 ( "자정 스케쥴러"에 의해 배송이 시작된 상태 )
-    public void startDelivery() {
+    // 주문 생성 -> 주문 확정 ( "자정 스케쥴러"에 의해 주문이 확정된 상태 )
+    public void fixOrder() {
         validateCurrentStatus(OrderStatus.ORDER_CREATED);
         if (deliveryId == null) {
-            throw new IllegalArgumentException("배송 ID가 할당되지 않은 주문은 배송을 시작할 수 없습니다.");
+            throw new IllegalArgumentException("배송 ID가 할당되지 않은 주문은 확정할 수 없습니다.");
         }
-        this.orderStatus = OrderStatus.IN_TRANSIT;
-    }
-
-    // 배송중 -> 수령 업체로 배송이 완료되면 DELIVERED
-    public void completeDelivery() {
-        validateCurrentStatus(OrderStatus.IN_TRANSIT);
-        this.orderStatus = OrderStatus.DELIVERED;
+        this.orderStatus = OrderStatus.ORDER_FIXED;
     }
 
     // 주문 생성 -> 주문 취소 ( 12시 전에만 가능 )
@@ -136,8 +130,13 @@ public class Order extends BaseEntity {
         this.orderStatus = OrderStatus.ORDER_CANCELLED;
     }
 
+    // 주문 확정 -> 시스템 취소
+    public void cancelBySystem() {
+        validateCurrentStatus(OrderStatus.ORDER_FIXED);
+        this.orderStatus = OrderStatus.SYSTEM_CANCELLED;
+    }
+
     // 주문 삭제: 시스템에서 숨김 (Soft Delete)
-    // 이 메서드가 호출되어 deletedAt에 값이 찍히는 순간, @SQLRestriction에 의해 조회되지 않음
     public void delete(String deletedBy) {
         this.deletedAt = LocalDateTime.now();
         this.deletedBy = deletedBy;
