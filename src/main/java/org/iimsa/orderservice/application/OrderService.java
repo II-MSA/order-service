@@ -1,14 +1,15 @@
 package org.iimsa.orderservice.application;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.iimsa.orderservice.application.dto.command.CreateOrderCommand;
 import org.iimsa.orderservice.application.dto.command.UpdateProductCommand;
-import org.iimsa.orderservice.application.port.OrderEventProducer;
-import org.iimsa.orderservice.domain.events.OrderCreatedEvent;
+import org.iimsa.orderservice.domain.events.OrderEventProducer;
+import org.iimsa.orderservice.domain.events.payload.OrderCreatedEvent;
 import org.iimsa.orderservice.domain.model.Order;
 import org.iimsa.orderservice.domain.model.OrderStatus;
 import org.iimsa.orderservice.domain.model.Product;
@@ -17,6 +18,7 @@ import org.iimsa.orderservice.domain.model.Supplier;
 import org.iimsa.orderservice.domain.repository.OrderRepository;
 import org.iimsa.orderservice.domain.service.CompanyProvider;
 import org.iimsa.orderservice.domain.service.ProductProvider;
+import org.iimsa.orderservice.infrastructure.messaging.kafka.OrderTopicProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class OrderService {
     private final ProductProvider productProvider;
     private final CompanyProvider companyProvider;
     private final OrderEventProducer orderEventProducer;
+    private final OrderTopicProperties orderTopicProperties; // 1. 프로퍼티 주입
 
     // 발주 이벤트를 Listen하고 있다가 주문 생성 이벤트 내부에서 사용할 메서드
     public UUID createOrder(CreateOrderCommand command) {
@@ -105,7 +108,7 @@ public class OrderService {
     public void cancelOrder(UUID orderId) {
         Order order = getOrder(orderId);
         // 엔티티 내부 로직: 12시 이전 여부 확인 및 상태 변경
-        order.cancel(LocalDateTime.now());
+        order.cancel(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
         log.info("주문 취소 완료: orderId={}", orderId);
     }
 
@@ -122,6 +125,19 @@ public class OrderService {
         order.delete(deletedBy);
 
         log.info("주문 삭제 완료(Soft Delete): orderId={}, deletedBy={}", orderId, deletedBy);
+    }
+
+    /**
+     * 3. 시스템에 의한 주문 취소 (이벤트 수신용) 배송 서버(Delivery)나 허브 서버(Hub)에서 재고 부족, 배송 불가 등의 사유로 취소 요청이 올 때 사용합니다.
+     */
+    @Transactional
+    public void cancelOrderBySystem(UUID orderId) {
+        Order order = getOrder(orderId);
+
+        // 엔티티 내부 로직 호출: 상태를 CANCELLED 등으로 변경
+        order.cancelBySystem();
+
+        log.info("시스템에 의한 주문 취소 완료: orderId={}", orderId);
     }
 
     // 자정이 되어 주문서를 확정한 후, 허브 서버로 전달한다.
@@ -145,13 +161,17 @@ public class OrderService {
                 );
 
                 // 3. 인프라 계층의 Producer 호출 (Events.trigger 실행)
+                // 인프라 스타일을 따라 properties에서 토픽명을 꺼내 전달
                 orderEventProducer.orderCreatedEvent(
                         correlationId,
                         "ORDER",
                         order.getId().toString(),
                         "ORDER_FIXED",
+                        orderTopicProperties.created(), // 설정 파일(yml)에 정의된 토픽명
                         payload
                 );
+                log.info("주문 확정 및 이벤트 발행 완료: orderId={}, Topic={}",
+                        order.getId(), orderTopicProperties.created());
             } catch (Exception e) {
                 log.error("주문 ID {} 배송 처리 실패", order.getId());
             }

@@ -36,6 +36,9 @@ public class Supplier {
         }
         this.supplierId = supplierId;
         CompanyData companyData = provider.getCompany(supplierId);
+        if (companyData == null) {
+            throw new IllegalArgumentException("companyData is null");
+        }
         this.supplierName = companyData.name();
     }
 

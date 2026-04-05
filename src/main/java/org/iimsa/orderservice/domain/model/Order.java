@@ -138,6 +138,12 @@ public class Order extends BaseEntity {
 
     // 주문 삭제: 시스템에서 숨김 (Soft Delete)
     public void delete(String deletedBy) {
+        if (deletedBy == null || deletedBy.isBlank()) {
+            throw new IllegalArgumentException("deletedBy는 비어 있을 수 없습니다.");
+        }
+        if (this.deletedAt != null) {
+            return; // idempotent soft-delete
+        }
         this.deletedAt = LocalDateTime.now();
         this.deletedBy = deletedBy;
     }

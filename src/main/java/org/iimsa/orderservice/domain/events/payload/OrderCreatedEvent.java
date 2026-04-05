@@ -1,9 +1,9 @@
-package org.iimsa.orderservice.domain.events;
+package org.iimsa.orderservice.domain.events.payload;
 
 import java.util.UUID;
 
 public record OrderCreatedEvent(
-        String correlationId, // 추적용 ID (추천)
+        String correlationId,
         UUID orderId,
         UUID productId,
         UUID receiverId,
@@ -12,5 +12,3 @@ public record OrderCreatedEvent(
         String requestDetails
 ) {
 }
-
-

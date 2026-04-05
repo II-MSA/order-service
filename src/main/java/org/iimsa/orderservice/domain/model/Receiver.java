@@ -22,8 +22,17 @@ public class Receiver {
     private String receiverName;
 
     protected Receiver(UUID receiverId, CompanyProvider provider) {
+        if (receiverId == null) {
+            throw new IllegalArgumentException("receiverId is null");
+        }
+        if (provider == null) {
+            throw new IllegalArgumentException("provider is null");
+        }
         this.receiverId = receiverId;
         CompanyData companyData = provider.getCompany(receiverId);
+        if (companyData == null) {
+            throw new IllegalArgumentException("companyData is null");
+        }
         this.receiverName = companyData.name();
     }
 

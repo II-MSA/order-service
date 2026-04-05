@@ -33,3 +33,7 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:3101/eureka/}
+
+topics:
+  order:
+    created: order-created-requested  # 자정 주문 확정 시 허브로 쏠 토픽

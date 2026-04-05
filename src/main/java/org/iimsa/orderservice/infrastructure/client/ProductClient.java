@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(
-        name = "product-service"
-        // fallback 처리
+        name = "product-service",
+        fallbackFactory = ProductClientFallbackFactory.class
 )
 public interface ProductClient {
     // 나중에 id로 요청하는 지, productId로 요청하는 지 확인할 것

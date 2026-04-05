@@ -5,9 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.iimsa.orderservice.domain.model.Order;
 import org.iimsa.orderservice.domain.model.OrderStatus;
-import org.springframework.stereotype.Repository;
 
-@Repository
 public interface OrderRepository {
 
     Order save(Order order);

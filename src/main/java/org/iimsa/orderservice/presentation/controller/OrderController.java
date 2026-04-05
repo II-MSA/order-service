@@ -32,8 +32,14 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CreateOrderResponseDto createOrder(CreateOrderRequestDto requestDto) {
-        CreateOrderCommand command = CreateOrderCommand.from(requestDto);
+    public CreateOrderResponseDto createOrder(@RequestBody CreateOrderRequestDto requestDto) {
+        CreateOrderCommand command = new CreateOrderCommand(
+                requestDto.supplierId(),
+                requestDto.receiverId(),
+                requestDto.productId(),
+                requestDto.quantity(),
+                requestDto.requestDetails()
+        );
 
         UUID orderId = orderService.createOrder(command);
 
