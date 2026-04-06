@@ -17,11 +17,11 @@ spring:
     username: apang
     password: apangpass
     driver-class-name: org.postgresql.Driver
-    # 임시 jpa 설정 ( 이후 config-server로 부터 받을 예정 )
-    jpa:
-      hibernate:
-        ddl-auto: update
-      show-sql: true
+  # 임시 jpa 설정 ( 이후 config-server로 부터 받을 예정 )
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 
 eureka:
   instance:
