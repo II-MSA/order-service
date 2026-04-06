@@ -62,10 +62,15 @@ public class OrderController {
 
         StringBuilder message = new StringBuilder();
 
-        // 1. 상품 및 수량 수정이 들어온 경우
-        if (requestDto.productId() != null && requestDto.quantity() != null) {
+        // 1. 상품 변경 시도 시 검증 (상품 ID는 있는데 수량이 없는 경우 차단)
+        if (requestDto.productId() != null && requestDto.quantity() == null) {
+            throw new IllegalArgumentException("상품 변경 시에는 수량 정보도 반드시 포함되어야 합니다.");
+        }
+
+        // 2. 서비스 호출 (수량만 있거나, 둘 다 있거나)
+        if (requestDto.quantity() != null) {
             UpdateProductCommand command = new UpdateProductCommand(
-                    requestDto.productId(),
+                    requestDto.productId(), // null일 수 있음 (수량만 변경하는 경우)
                     requestDto.quantity()
             );
             orderService.updateOrderProduct(orderId, command);

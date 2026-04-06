@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class OrderEventProducerImpl implements OrderEventProducer {
     @Override
     public void orderCreatedEvent(String correlationId, String domainType, String domainId, String eventType,
-                                  String topic, OrderCreatedEvent payload) {
+                                  OrderCreatedEvent payload) {
         Events.trigger(correlationId, domainType, domainId, eventType, payload);
     }
 }

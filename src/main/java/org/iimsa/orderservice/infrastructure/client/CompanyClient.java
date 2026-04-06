@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(
         name = "company-service",
-        fallback = CompanyClientFallbackFactory.class
+        fallbackFactory = CompanyClientFallbackFactory.class
 )
 public interface CompanyClient {
     @GetMapping("/{companyId}")

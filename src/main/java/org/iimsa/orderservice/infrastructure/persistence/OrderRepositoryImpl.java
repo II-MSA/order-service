@@ -7,9 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.iimsa.orderservice.domain.model.Order;
 import org.iimsa.orderservice.domain.model.OrderStatus;
 import org.iimsa.orderservice.domain.repository.OrderRepository;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
+@Repository
 public class OrderRepositoryImpl implements OrderRepository {
 
     private final JpaOrderRepository jpaOrderRepository;

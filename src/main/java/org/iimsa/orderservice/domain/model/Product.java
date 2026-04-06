@@ -26,18 +26,25 @@ public class Product {
     private String productName;
 
     protected Product(UUID productId, Integer quantity, ProductProvider productProvider) {
-        if(productId == null) {
+        if (productId == null) {
             throw new IllegalArgumentException("productId cannot be null");
         }
-        if(quantity == null) {
+        if (quantity == null) {
             throw new IllegalArgumentException("quantity cannot be null");
         }
-        if(productProvider == null) {
+        if (productProvider == null) {
             throw new IllegalArgumentException("productProvider cannot be null");
         }
         this.productId = productId;
         this.quantity = quantity;
         this.productName = productProvider.getProductName(productId);
+    }
+
+    // 내부적으로 수량 변경 시 사용할 protected 생성자
+    protected Product(UUID productId, Integer quantity, String productName) {
+        this.productId = productId;
+        this.quantity = quantity;
+        this.productName = productName;
     }
 
     public static Product from(UUID productId, Integer quantity, ProductProvider productProvider) {

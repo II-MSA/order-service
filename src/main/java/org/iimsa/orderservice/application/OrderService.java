@@ -68,11 +68,16 @@ public class OrderService {
     public void updateOrderProduct(UUID orderId, UpdateProductCommand command) {
         Order order = getOrder(orderId);
 
-        // 새로운 상품 VO 생성 (재고/이름 등 외부 검증 포함)
-        Product newProduct = Product.from(command.productId(), command.quantity(), productProvider);
+        if (command.productId() != null) { // 상품 자체가 바뀌는 경우
+            // 새로운 상품 VO 생성 (재고/이름 등 외부 검증 포함)
+            Product newProduct = Product.from(command.productId(), command.quantity(), productProvider);
 
-        // 도메인 모델에 변경 위임
-        order.updateProduct(newProduct);
+            // 도메인 모델에 변경 위임
+            order.updateProduct(newProduct);
+        } else { // 수량만 바뀌는 경우 (기존 상품 ID 유지, 수량만 업데이트)
+            // 엔티티에 수량만 변경하는 전용 메서드가 있다면 그것을 호출
+            order.updateQuantity(command.quantity());
+        }
 
         log.info("주문 상품 수정 완료: orderId={}, productId={}", orderId, command.productId());
     }
@@ -166,7 +171,6 @@ public class OrderService {
                         correlationId,
                         "ORDER",
                         order.getId().toString(),
-                        "ORDER_FIXED",
                         orderTopicProperties.created(), // 설정 파일(yml)에 정의된 토픽명
                         payload
                 );
