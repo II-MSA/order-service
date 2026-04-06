@@ -22,7 +22,7 @@ repositories {
 
     maven {
         name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/yonggyo1125/spartahub-common")
+        url = uri("https://maven.pkg.github.com/apangmsa/common-module")
         credentials {
             username = System.getenv("GPR_USER")
             password = System.getenv("GPR_TOKEN")
@@ -37,7 +37,7 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation 'com.iimsa:common2:1.2-SNAPSHOT'
+    implementation 'com.iimsa:common:2.0-SNAPSHOT'
 
     // ...
 
