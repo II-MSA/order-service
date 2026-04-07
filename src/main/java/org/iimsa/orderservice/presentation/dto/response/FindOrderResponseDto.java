@@ -1,26 +1,38 @@
 package org.iimsa.orderservice.presentation.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.UUID;
 import org.iimsa.orderservice.domain.model.Order;
 
+@Schema(description = "주문 단건 상세 조회 응답 DTO")
 public record FindOrderResponseDto(
+        @Schema(description = "주문 ID")
         UUID orderId,
+
+        @Schema(description = "상품 ID")
         UUID productId,
+
+        @Schema(description = "배송 ID")
         UUID deliveryId,
+
+        @Schema(description = "주문 상태", example = "PENDING")
         String orderStatus,
+
+        @Schema(description = "요청 상세 내용")
         String requestDetails,
 
-        // 상품 정보 (Product VO)
+        @Schema(description = "상품명")
         String productName,
+
+        @Schema(description = "수량")
         Integer quantity,
 
-        // 공급 업체 정보 (Supplier VO)
+        @Schema(description = "공급 업체명")
         String supplierName,
 
-        // 수령자 정보 (Receiver VO)
+        @Schema(description = "수령 업체명")
         String receiverName
 ) {
-    // Entity -> DTO 변환 정적 팩토리 메서드
     public static FindOrderResponseDto from(Order order) {
         return new FindOrderResponseDto(
                 order.getId(),
@@ -28,15 +40,9 @@ public record FindOrderResponseDto(
                 order.getDeliveryId(),
                 order.getOrderStatus().toString(),
                 order.getRequestDetails(),
-
-                // Product (VO 필드명에 맞춰 수정하세요)
                 order.getProduct().getProductName(),
                 order.getProduct().getQuantity(),
-
-                // Supplier
                 order.getSupplier().getSupplierName(),
-
-                // Receiver
                 order.getReceiver().getReceiverName()
         );
     }
