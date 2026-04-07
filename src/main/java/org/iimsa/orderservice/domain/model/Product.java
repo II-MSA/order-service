@@ -42,6 +42,12 @@ public class Product {
 
     // 내부적으로 수량 변경 시 사용할 protected 생성자
     protected Product(UUID productId, Integer quantity, String productName) {
+        if (productId == null) {
+            throw new IllegalArgumentException("productId cannot be null");
+        }
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("quantity must be positive");
+        }
         this.productId = productId;
         this.quantity = quantity;
         this.productName = productName;

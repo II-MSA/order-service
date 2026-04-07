@@ -12,7 +12,7 @@ public class CompanyClientFallbackFactory implements FallbackFactory<CompanyClie
     @Override
     public CompanyClient create(Throwable e) {
         return CompanyId -> {
-            log.error("[Hub Service Fallback] ID: {} 조회 중 장애 발생. 사유: {}", CompanyId, e.getMessage(), e);
+            log.error("[Company Service Fallback] ID: {} 조회 중 장애 발생. 사유: {}", CompanyId, e.getMessage(), e);
 
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Company Service API 요청 처리 실패, 잠시 후 다시 시도해주세요.");

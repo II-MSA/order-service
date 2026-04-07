@@ -17,8 +17,11 @@ public class CompanyProviderImpl implements CompanyProvider {
     public CompanyData getCompany(UUID companyId) {
         Objects.requireNonNull(companyId, "companyId는 필수입니다.");
         CompanyData company = companyClient.getCompany(companyId);
-        if (company == null || company.companyId() == null || company.companyName() == null || company.companyName()
-                .isBlank()) {
+        if (company == null
+                || company.companyId() == null
+                || company.companyName() == null || company.companyName().isBlank()
+                || company.hubId() == null
+                || company.hubName() == null || company.hubName().isBlank()) {
             throw new IllegalStateException("유효한 회사 정보를 조회하지 못했습니다.");
         }
         return company;
