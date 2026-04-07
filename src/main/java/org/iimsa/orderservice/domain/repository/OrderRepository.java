@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.iimsa.orderservice.domain.model.Order;
 import org.iimsa.orderservice.domain.model.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface OrderRepository {
 
@@ -16,4 +18,6 @@ public interface OrderRepository {
 
     // 구현은 하지만, 사용은 안함.
     int updateStatusBulk(OrderStatus from, OrderStatus to);
+
+    Page<Order> findAll(Pageable pageable);
 }

@@ -18,8 +18,14 @@ public class Supplier {
     @Column(name = "supplier_id")
     private UUID supplierId;
 
-    @Column(name = "supplierName", length = 100)
+    @Column(name = "supplier_name", length = 100)
     private String supplierName;
+
+    @Column(name = "supplier_hubId", length = 100)
+    private UUID supplierHubId;
+
+    @Column(name = "supplier_hubName", length = 100)
+    private String supplierHubName;
 
     private Supplier(UUID supplierId, String supplierName, String supplierAddress) {
         this.supplierId = supplierId;
@@ -39,7 +45,9 @@ public class Supplier {
         if (companyData == null) {
             throw new IllegalArgumentException("companyData is null");
         }
-        this.supplierName = companyData.name();
+        this.supplierName = companyData.companyName();
+        this.supplierHubId = companyData.hubId();
+        this.supplierHubName = companyData.hubName();
     }
 
     public static Supplier from(UUID companyId, CompanyProvider companyProvider) {

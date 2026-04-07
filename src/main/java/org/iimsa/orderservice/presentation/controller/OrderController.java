@@ -10,8 +10,14 @@ import org.iimsa.orderservice.presentation.dto.request.CreateOrderRequestDto;
 import org.iimsa.orderservice.presentation.dto.request.UpdateRequestDto;
 import org.iimsa.orderservice.presentation.dto.response.CreateOrderResponseDto;
 import org.iimsa.orderservice.presentation.dto.response.FindOrderResponseDto;
+import org.iimsa.orderservice.presentation.dto.response.ListOrderResponseDto;
 import org.iimsa.orderservice.presentation.dto.response.UpdateResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -56,6 +62,7 @@ public class OrderController {
      * 주문 정보 수정 API 전달되는 ID 값에 따라 상품 수정, 수령업체 동기화, 공급업체 동기화를 수행합니다.
      */
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
     public UpdateResponseDto updateOrder(
             @PathVariable("id") UUID orderId,
             @RequestBody UpdateRequestDto requestDto) {
@@ -100,6 +107,7 @@ public class OrderController {
      * 1. 주문 취소 (상태 변경) 사용자가 "취소 버튼"을 눌렀을 때 호출
      */
     @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
     public UpdateResponseDto cancelOrder(@PathVariable("id") UUID orderId) {
         orderService.cancelOrder(orderId);
         return UpdateResponseDto.success(orderId, "주문이 정상적으로 취소되었습니다.");
@@ -110,7 +118,17 @@ public class OrderController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
     public void deleteOrder(@PathVariable("id") UUID orderId, String userId) { // 임시로 유저 ID를 입력받음, 이후 실제 유저정보를 받아오도록 변경
         orderService.deleteOrder(orderId, userId);
+    }
+
+    @GetMapping("/search")
+//    @Operation(summary = "주문 목록 검색/페이징", description = "페이징 처리된 주문 목록을 조회합니다.")
+    public Page<ListOrderResponseDto> search(
+//            @Parameter(hidden = true)
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return orderService.searchOrders(pageable);
     }
 }

@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.iimsa.orderservice.application.dto.command.CreateOrderCommand;
 import org.iimsa.orderservice.application.dto.command.UpdateProductCommand;
 import org.iimsa.orderservice.domain.events.OrderEventProducer;
-import org.iimsa.orderservice.domain.events.payload.OrderCreatedEvent;
+import org.iimsa.orderservice.domain.events.payload.OrderCreatedPayload;
 import org.iimsa.orderservice.domain.model.Order;
 import org.iimsa.orderservice.domain.model.OrderStatus;
 import org.iimsa.orderservice.domain.model.Product;
@@ -19,6 +19,9 @@ import org.iimsa.orderservice.domain.repository.OrderRepository;
 import org.iimsa.orderservice.domain.service.CompanyProvider;
 import org.iimsa.orderservice.domain.service.ProductProvider;
 import org.iimsa.orderservice.infrastructure.messaging.kafka.OrderTopicProperties;
+import org.iimsa.orderservice.presentation.dto.response.ListOrderResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -155,14 +158,23 @@ public class OrderService {
             try {
                 order.fixOrder();
 
-                OrderCreatedEvent payload = new OrderCreatedEvent(
-                        correlationId,
-                        order.getId(),
-                        order.getProduct().getProductId(),
-                        order.getReceiver().getReceiverId(),
-                        order.getSupplier().getSupplierId(),
-                        order.getDeliveryId(),
-                        order.getRequestDetails()
+                OrderCreatedPayload payload = new OrderCreatedPayload(
+                        correlationId,                                   // String correlationId
+                        order.getId(),                                    // UUID orderId
+                        order.getProduct().getProductId(),                // UUID productId
+                        order.getProduct().getQuantity(),
+                        // Integer productQuantity (order에서 가져온다고 가정)
+                        order.getProduct().getProductName(),              // String productName
+                        order.getReceiver().getReceiverId(),              // UUID receiverId
+                        order.getReceiver().getReceiverName(),            // String receiverName
+                        order.getReceiver().getReceiverHubId(),           // UUID receiverHubId
+                        order.getReceiver().getReceiverHubName(),         // String receiverHubName
+                        order.getSupplier().getSupplierId(),              // UUID supplierId
+                        order.getSupplier().getSupplierName(),            // String supplierName
+                        order.getSupplier().getSupplierHubId(),           // UUID supplierHubId
+                        order.getSupplier().getSupplierHubName(),         // String supplierHubName
+                        order.getDeliveryId(),                            // UUID deliveryId
+                        order.getRequestDetails()                         // String requestDetails
                 );
 
                 // 3. 인프라 계층의 Producer 호출 (Events.trigger 실행)
@@ -180,5 +192,26 @@ public class OrderService {
                 log.error("주문 ID {} 배송 처리 실패", order.getId());
             }
         }
+    }
+
+    public Page<ListOrderResponseDto> searchOrders(Pageable pageable) {
+        Page<Order> orderPage = orderRepository.findAll(pageable);
+
+        return orderPage.map(order -> new ListOrderResponseDto(
+                order.getId(),                               // orderId
+                order.getProduct().getProductId(),           // productId
+                order.getProduct().getQuantity(),            // productQuantity
+                order.getProduct().getProductName(),         // productName
+                order.getReceiver().getReceiverId(),         // receiverId
+                order.getReceiver().getReceiverName(),       // receiverName
+                order.getReceiver().getReceiverHubId(),      // receiverHubId
+                order.getReceiver().getReceiverHubName(),    // receiverHubName
+                order.getSupplier().getSupplierId(),         // supplierId
+                order.getSupplier().getSupplierName(),       // supplierName
+                order.getSupplier().getSupplierHubId(),      // supplierHubId
+                order.getSupplier().getSupplierHubName(),    // supplierHubName
+                order.getDeliveryId(),                       // deliveryId
+                order.getRequestDetails()                    // requestDetails
+        ));
     }
 }

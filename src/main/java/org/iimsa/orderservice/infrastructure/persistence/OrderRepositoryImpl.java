@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.iimsa.orderservice.domain.model.Order;
 import org.iimsa.orderservice.domain.model.OrderStatus;
 import org.iimsa.orderservice.domain.repository.OrderRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,5 +38,10 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Transactional // 수정 작업이므로 반드시 트랜잭션 필요
     public int updateStatusBulk(OrderStatus from, OrderStatus to) {
         return jpaOrderRepository.bulkUpdateStatus(from, to);
+    }
+
+    @Override
+    public Page<Order> findAll(Pageable pageable) {
+        return jpaOrderRepository.findAll(pageable);
     }
 }
