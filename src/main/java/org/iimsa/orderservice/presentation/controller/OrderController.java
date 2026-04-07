@@ -18,6 +18,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -119,8 +121,9 @@ public class OrderController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAnyRole('MASTER', 'HUB_MANAGER')")
-    public void deleteOrder(@PathVariable("id") UUID orderId, String userId) { // 임시로 유저 ID를 입력받음, 이후 실제 유저정보를 받아오도록 변경
-        orderService.deleteOrder(orderId, userId);
+    public void deleteOrder(@PathVariable("id") UUID orderId,
+                            @AuthenticationPrincipal UserDetails userDetails) { // 임시로 유저 ID를 입력받음, 이후 실제 유저정보를 받아오도록 변경
+        orderService.deleteOrder(orderId, userDetails.getUsername());
     }
 
     @GetMapping("/search")

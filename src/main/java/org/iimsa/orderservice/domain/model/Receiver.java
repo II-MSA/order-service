@@ -18,13 +18,13 @@ public class Receiver {
     @Column(name = "receiver_id")
     private UUID receiverId;
 
-    @Column(name = "receiverName", length = 100)
+    @Column(name = "receiver_name", length = 100)
     private String receiverName;
 
-    @Column(name = "receiver_hubId", length = 100)
+    @Column(name = "receiver_hub_id", length = 100)
     private UUID receiverHubId;
 
-    @Column(name = "receiverName", length = 100)
+    @Column(name = "receiver_hub_name", length = 100)
     private String receiverHubName;
 
     protected Receiver(UUID receiverId, CompanyProvider provider) {

@@ -21,16 +21,11 @@ public class Supplier {
     @Column(name = "supplier_name", length = 100)
     private String supplierName;
 
-    @Column(name = "supplier_hubId", length = 100)
+    @Column(name = "supplier_hub_id", length = 100)
     private UUID supplierHubId;
 
-    @Column(name = "supplier_hubName", length = 100)
+    @Column(name = "supplier_hub_name", length = 100)
     private String supplierHubName;
-
-    private Supplier(UUID supplierId, String supplierName, String supplierAddress) {
-        this.supplierId = supplierId;
-        this.supplierName = supplierName;
-    }
 
     protected Supplier(UUID supplierId, CompanyProvider provider) {
         if (supplierId == null) {

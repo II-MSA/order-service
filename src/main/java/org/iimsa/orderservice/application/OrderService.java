@@ -112,7 +112,6 @@ public class OrderService {
     /**
      * 1. 주문 취소 (비즈니스적 처리) 주문 상태를 CANCELLED로 변경하며, 사용자가 여전히 내역을 볼 수 있습니다.
      */
-    @Transactional
     public void cancelOrder(UUID orderId) {
         Order order = getOrder(orderId);
         // 엔티티 내부 로직: 12시 이전 여부 확인 및 상태 변경
@@ -123,7 +122,6 @@ public class OrderService {
     /**
      * 2. 주문 삭제 (시스템적 처리 - Soft Delete) DB의 deleted_at을 채워 @SQLRestriction에 의해 조회에서 제외됩니다.
      */
-    @Transactional
     public void deleteOrder(UUID orderId, String deletedBy) {
         Order order = orderRepository.findById(orderId).orElseThrow(
                 () -> new RuntimeException("삭제할 주문이 존재하지 않습니다.")
@@ -138,7 +136,6 @@ public class OrderService {
     /**
      * 3. 시스템에 의한 주문 취소 (이벤트 수신용) 배송 서버(Delivery)나 허브 서버(Hub)에서 재고 부족, 배송 불가 등의 사유로 취소 요청이 올 때 사용합니다.
      */
-    @Transactional
     public void cancelOrderBySystem(UUID orderId) {
         Order order = getOrder(orderId);
 
@@ -189,7 +186,7 @@ public class OrderService {
                 log.info("주문 확정 및 이벤트 발행 완료: orderId={}, Topic={}",
                         order.getId(), orderTopicProperties.created());
             } catch (Exception e) {
-                log.error("주문 ID {} 배송 처리 실패", order.getId());
+                log.error("주문 ID {} 배송 처리 실패: {}", order.getId(), e.getMessage(), e);
             }
         }
     }
