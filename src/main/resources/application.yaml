@@ -2,10 +2,12 @@ server:
   port: 5110
 
 spring:
+  main:
+    allow-bean-definition-overriding: true
   application:
     name: order-service
   config:
-    import: 'optional:configserver: '
+    import: 'optional:configserver:'
   cloud:
     config:
       discovery:
@@ -33,3 +35,21 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:3101/eureka/}
+
+topics:
+  order:
+    created: order-created-requested  # 자정 주문 확정 시 허브로 쏠 토픽
+
+openapi:
+  service:
+    url: ${OPENAPI_URL:http://localhost:5110}
+
+springdoc:
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  swagger-ui:
+    path: /swagger-ui.html
+    # 접속 후 API 그룹이 잘 보이도록 설정
+    operations-sorter: method
+  api-docs:
+    path: /api-docs

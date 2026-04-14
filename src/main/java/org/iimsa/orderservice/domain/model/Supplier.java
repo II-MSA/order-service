@@ -18,13 +18,14 @@ public class Supplier {
     @Column(name = "supplier_id")
     private UUID supplierId;
 
-    @Column(name = "supplierName", length = 100)
+    @Column(name = "supplier_name", length = 100)
     private String supplierName;
 
-    private Supplier(UUID supplierId, String supplierName, String supplierAddress) {
-        this.supplierId = supplierId;
-        this.supplierName = supplierName;
-    }
+    @Column(name = "supplier_hub_id", length = 100)
+    private UUID supplierHubId;
+
+    @Column(name = "supplier_hub_name", length = 100)
+    private String supplierHubName;
 
     protected Supplier(UUID supplierId, CompanyProvider provider) {
         if (supplierId == null) {
@@ -36,7 +37,12 @@ public class Supplier {
         }
         this.supplierId = supplierId;
         CompanyData companyData = provider.getCompany(supplierId);
-        this.supplierName = companyData.name();
+        if (companyData == null) {
+            throw new IllegalArgumentException("companyData is null");
+        }
+        this.supplierName = companyData.companyName();
+        this.supplierHubId = companyData.hubId();
+        this.supplierHubName = companyData.hubName();
     }
 
     public static Supplier from(UUID companyId, CompanyProvider companyProvider) {

@@ -18,18 +18,30 @@ public class Receiver {
     @Column(name = "receiver_id")
     private UUID receiverId;
 
-    @Column(name = "receiverName", length = 100)
+    @Column(name = "receiver_name", length = 100)
     private String receiverName;
 
+    @Column(name = "receiver_hub_id", length = 100)
+    private UUID receiverHubId;
+
+    @Column(name = "receiver_hub_name", length = 100)
+    private String receiverHubName;
+
     protected Receiver(UUID receiverId, CompanyProvider provider) {
+        if (receiverId == null) {
+            throw new IllegalArgumentException("receiverId is null");
+        }
+        if (provider == null) {
+            throw new IllegalArgumentException("provider is null");
+        }
         this.receiverId = receiverId;
         CompanyData companyData = provider.getCompany(receiverId);
-        this.receiverName = companyData.name();
-    }
-
-    private Receiver(UUID receiverId, String name, String address) {
-        this.receiverId = receiverId;
-        this.receiverName = name;
+        if (companyData == null) {
+            throw new IllegalArgumentException("companyData is null");
+        }
+        this.receiverName = companyData.companyName();
+        this.receiverHubId = companyData.hubId();
+        this.receiverHubName = companyData.hubName();
     }
 
     public static Receiver from(UUID receiverId, CompanyProvider companyProvider) {

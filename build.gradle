@@ -22,7 +22,8 @@ repositories {
 
     maven {
         name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/yonggyo1125/spartahub-common")
+        url = uri("https://maven.pkg.github.com/apangmsa/common-module")
+        //url = uri("https://maven.pkg.github.com/yonggyo1125/spartahub-common")
         credentials {
             username = System.getenv("GPR_USER")
             password = System.getenv("GPR_TOKEN")
@@ -30,6 +31,12 @@ repositories {
     }
 }
 
+// [해결] GitHub Packages의 SNAPSHOT 의존성이 로컬 캐시 때문에 갱신되지 않는 문제 방지
+// Gradle은 기본적으로 SNAPSHOT을 24시간 동안 캐싱하지만,
+// 아래 설정을 통해 빌드 시마다 원격 저장소의 최신 SNAPSHOT을 확인하도록 강제함.
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
 dependencyManagement {
     imports {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
@@ -37,9 +44,9 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation 'com.iimsa:common2:1.2-SNAPSHOT'
+    implementation 'com.iimsa:common:2.0-SNAPSHOT'
 
-    // ...
+    /**여기에 각자 의존성 작성*/
 
     // Querydsl APT
     annotationProcessor 'jakarta.annotation:jakarta.annotation-api'

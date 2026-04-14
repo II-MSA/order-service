@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -30,6 +31,9 @@ public class Order extends BaseEntity {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Version
+    private int version;
 
     @Embedded
     private Product product;
@@ -94,6 +98,23 @@ public class Order extends BaseEntity {
         this.product = product;
     }
 
+    // 발주 넣을 상품의 수량만 변경할 때
+    public void updateQuantity(Integer quantity) {
+        validateCurrentStatus(OrderStatus.ORDER_CREATED);
+        // 2. 수량 검증 (예: 0보다 커야 함 등)
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
+        }
+
+        // 3. 기존 Product 정보를 유지하며 수량만 변경된 새로운 객체 생성
+        // (Product가 @Embeddable이므로 객체 통째로 교체하는 것이 깔끔합니다)
+        this.product = new Product(
+                this.product.getProductId(),
+                quantity,
+                this.product.getProductName()
+        );
+    }
+
     // 수령 주소, 수령자 정보 수정시
     public void updateDeliveryInfo(Receiver receiver, String requestDetails) {
         validateCurrentStatus(OrderStatus.ORDER_CREATED); // 생성 상태일 때만 수정 가능
@@ -138,6 +159,12 @@ public class Order extends BaseEntity {
 
     // 주문 삭제: 시스템에서 숨김 (Soft Delete)
     public void delete(String deletedBy) {
+        if (deletedBy == null || deletedBy.isBlank()) {
+            throw new IllegalArgumentException("deletedBy는 비어 있을 수 없습니다.");
+        }
+        if (this.deletedAt != null) {
+            return; // idempotent soft-delete
+        }
         this.deletedAt = LocalDateTime.now();
         this.deletedBy = deletedBy;
     }

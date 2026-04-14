@@ -1,14 +1,15 @@
 package org.iimsa.orderservice.application;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.iimsa.orderservice.application.dto.command.CreateOrderCommand;
 import org.iimsa.orderservice.application.dto.command.UpdateProductCommand;
-import org.iimsa.orderservice.application.port.OrderEventProducer;
-import org.iimsa.orderservice.domain.events.OrderCreatedEvent;
+import org.iimsa.orderservice.domain.events.OrderEventProducer;
+import org.iimsa.orderservice.domain.events.payload.OrderCreatedPayload;
 import org.iimsa.orderservice.domain.model.Order;
 import org.iimsa.orderservice.domain.model.OrderStatus;
 import org.iimsa.orderservice.domain.model.Product;
@@ -17,6 +18,10 @@ import org.iimsa.orderservice.domain.model.Supplier;
 import org.iimsa.orderservice.domain.repository.OrderRepository;
 import org.iimsa.orderservice.domain.service.CompanyProvider;
 import org.iimsa.orderservice.domain.service.ProductProvider;
+import org.iimsa.orderservice.infrastructure.messaging.kafka.OrderTopicProperties;
+import org.iimsa.orderservice.presentation.dto.response.ListOrderResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +35,7 @@ public class OrderService {
     private final ProductProvider productProvider;
     private final CompanyProvider companyProvider;
     private final OrderEventProducer orderEventProducer;
+    private final OrderTopicProperties orderTopicProperties; // 1. 프로퍼티 주입
 
     // 발주 이벤트를 Listen하고 있다가 주문 생성 이벤트 내부에서 사용할 메서드
     public UUID createOrder(CreateOrderCommand command) {
@@ -65,11 +71,16 @@ public class OrderService {
     public void updateOrderProduct(UUID orderId, UpdateProductCommand command) {
         Order order = getOrder(orderId);
 
-        // 새로운 상품 VO 생성 (재고/이름 등 외부 검증 포함)
-        Product newProduct = Product.from(command.productId(), command.quantity(), productProvider);
+        if (command.productId() != null) { // 상품 자체가 바뀌는 경우
+            // 새로운 상품 VO 생성 (재고/이름 등 외부 검증 포함)
+            Product newProduct = Product.from(command.productId(), command.quantity(), productProvider);
 
-        // 도메인 모델에 변경 위임
-        order.updateProduct(newProduct);
+            // 도메인 모델에 변경 위임
+            order.updateProduct(newProduct);
+        } else { // 수량만 바뀌는 경우 (기존 상품 ID 유지, 수량만 업데이트)
+            // 엔티티에 수량만 변경하는 전용 메서드가 있다면 그것을 호출
+            order.updateQuantity(command.quantity());
+        }
 
         log.info("주문 상품 수정 완료: orderId={}, productId={}", orderId, command.productId());
     }
@@ -101,18 +112,16 @@ public class OrderService {
     /**
      * 1. 주문 취소 (비즈니스적 처리) 주문 상태를 CANCELLED로 변경하며, 사용자가 여전히 내역을 볼 수 있습니다.
      */
-    @Transactional
     public void cancelOrder(UUID orderId) {
         Order order = getOrder(orderId);
         // 엔티티 내부 로직: 12시 이전 여부 확인 및 상태 변경
-        order.cancel(LocalDateTime.now());
+        order.cancel(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
         log.info("주문 취소 완료: orderId={}", orderId);
     }
 
     /**
      * 2. 주문 삭제 (시스템적 처리 - Soft Delete) DB의 deleted_at을 채워 @SQLRestriction에 의해 조회에서 제외됩니다.
      */
-    @Transactional
     public void deleteOrder(UUID orderId, String deletedBy) {
         Order order = orderRepository.findById(orderId).orElseThrow(
                 () -> new RuntimeException("삭제할 주문이 존재하지 않습니다.")
@@ -122,6 +131,18 @@ public class OrderService {
         order.delete(deletedBy);
 
         log.info("주문 삭제 완료(Soft Delete): orderId={}, deletedBy={}", orderId, deletedBy);
+    }
+
+    /**
+     * 3. 시스템에 의한 주문 취소 (이벤트 수신용) 배송 서버(Delivery)나 허브 서버(Hub)에서 재고 부족, 배송 불가 등의 사유로 취소 요청이 올 때 사용합니다.
+     */
+    public void cancelOrderBySystem(UUID orderId) {
+        Order order = getOrder(orderId);
+
+        // 엔티티 내부 로직 호출: 상태를 CANCELLED 등으로 변경
+        order.cancelBySystem();
+
+        log.info("시스템에 의한 주문 취소 완료: orderId={}", orderId);
     }
 
     // 자정이 되어 주문서를 확정한 후, 허브 서버로 전달한다.
@@ -134,27 +155,60 @@ public class OrderService {
             try {
                 order.fixOrder();
 
-                OrderCreatedEvent payload = new OrderCreatedEvent(
-                        correlationId,
-                        order.getId(),
-                        order.getProduct().getProductId(),
-                        order.getReceiver().getReceiverId(),
-                        order.getSupplier().getSupplierId(),
-                        order.getDeliveryId(),
-                        order.getRequestDetails()
+                OrderCreatedPayload payload = new OrderCreatedPayload(
+                        correlationId,                                   // String correlationId
+                        order.getId(),                                    // UUID orderId
+                        order.getProduct().getProductId(),                // UUID productId
+                        order.getProduct().getQuantity(),
+                        // Integer productQuantity (order에서 가져온다고 가정)
+                        order.getProduct().getProductName(),              // String productName
+                        order.getReceiver().getReceiverId(),              // UUID receiverId
+                        order.getReceiver().getReceiverName(),            // String receiverName
+                        order.getReceiver().getReceiverHubId(),           // UUID receiverHubId
+                        order.getReceiver().getReceiverHubName(),         // String receiverHubName
+                        order.getSupplier().getSupplierId(),              // UUID supplierId
+                        order.getSupplier().getSupplierName(),            // String supplierName
+                        order.getSupplier().getSupplierHubId(),           // UUID supplierHubId
+                        order.getSupplier().getSupplierHubName(),         // String supplierHubName
+                        order.getDeliveryId(),                            // UUID deliveryId
+                        order.getRequestDetails()                         // String requestDetails
                 );
 
                 // 3. 인프라 계층의 Producer 호출 (Events.trigger 실행)
+                // 인프라 스타일을 따라 properties에서 토픽명을 꺼내 전달
                 orderEventProducer.orderCreatedEvent(
                         correlationId,
                         "ORDER",
                         order.getId().toString(),
-                        "ORDER_FIXED",
+                        orderTopicProperties.created(), // 설정 파일(yml)에 정의된 토픽명
                         payload
                 );
+                log.info("주문 확정 및 이벤트 발행 완료: orderId={}, Topic={}",
+                        order.getId(), orderTopicProperties.created());
             } catch (Exception e) {
-                log.error("주문 ID {} 배송 처리 실패", order.getId());
+                log.error("주문 ID {} 배송 처리 실패: {}", order.getId(), e.getMessage(), e);
             }
         }
+    }
+
+    public Page<ListOrderResponseDto> searchOrders(Pageable pageable) {
+        Page<Order> orderPage = orderRepository.findAll(pageable);
+
+        return orderPage.map(order -> new ListOrderResponseDto(
+                order.getId(),                               // orderId
+                order.getProduct().getProductId(),           // productId
+                order.getProduct().getQuantity(),            // productQuantity
+                order.getProduct().getProductName(),         // productName
+                order.getReceiver().getReceiverId(),         // receiverId
+                order.getReceiver().getReceiverName(),       // receiverName
+                order.getReceiver().getReceiverHubId(),      // receiverHubId
+                order.getReceiver().getReceiverHubName(),    // receiverHubName
+                order.getSupplier().getSupplierId(),         // supplierId
+                order.getSupplier().getSupplierName(),       // supplierName
+                order.getSupplier().getSupplierHubId(),      // supplierHubId
+                order.getSupplier().getSupplierHubName(),    // supplierHubName
+                order.getDeliveryId(),                       // deliveryId
+                order.getRequestDetails()                    // requestDetails
+        ));
     }
 }
